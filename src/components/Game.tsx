@@ -1,60 +1,66 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Board from "./Board";
 import { calculateWinner, findBestMove } from "../utils/ai";
+import Modal from "./Modal";
+import Hud from "./Hud";
+import Button from "./Button";
 
-const Game: React.FC = () => {
-  const [history, setHistory] = useState<(string | null)[][]>([
-    Array(9).fill(null),
-  ]);
-  const [stepNumber, setStepNumber] = useState(0);
+type GameProps = {
+  gameType: number;
+};
+
+const Game = ({ gameType }: GameProps) => {
+  const [squares, setSquares] = useState<(string | null)[]>(
+    Array(9).fill(null)
+  );
   const [xIsNext, setXIsNext] = useState(true);
+  const [xStarts, setXStarts] = useState(true);
 
-  const current = history[stepNumber];
-  const winner = calculateWinner(current);
+  const winner = calculateWinner(squares);
 
   useEffect(() => {
-    if (!xIsNext && !winner) {
-      const squares = current.slice();
-      const bestMove = findBestMove(squares);
+    if (gameType === 0 && !xIsNext && !winner) {
+      const bestMove = findBestMove(squares, "easy");
       if (bestMove !== -1) {
-        squares[bestMove] = "O";
-        setHistory(history.concat([squares]));
-        setStepNumber(stepNumber + 1);
+        const newSquares = squares.slice();
+        newSquares[bestMove] = "O";
+        setSquares(newSquares);
         setXIsNext(true);
       }
     }
-  }, [xIsNext, winner, current, history, stepNumber]);
+  }, [xIsNext, winner, squares, gameType]);
 
   const handleClick = (i: number) => {
-    const newHistory = history.slice(0, stepNumber + 1);
-    const current = newHistory[newHistory.length - 1];
-    const squares = current.slice();
-
     if (winner || squares[i]) {
       return;
     }
 
-    squares[i] = "X";
-    setHistory(newHistory.concat([squares]));
-    setStepNumber(newHistory.length);
-    setXIsNext(false);
+    const newSquares = squares.slice();
+    newSquares[i] = xIsNext ? "X" : "O";
+    setSquares(newSquares);
+    setXIsNext(!xIsNext);
   };
 
-  let status;
-  if (winner) {
-    status = "Winner: " + winner;
-  } else {
-    status = "Next player: " + (xIsNext ? "X" : "O");
-  }
+  const handleReset = () => {
+    setSquares(Array(9).fill(null));
+    setXIsNext(!xStarts);
+    setXStarts((prev) => !prev);
+  };
+
+  const isFilled = squares.every(
+    (element) => element !== null && element !== undefined
+  );
 
   return (
     <div className="content-center flex-row">
-      <div className="game-info text-3xl">
-        <div>{status}</div>
-      </div>
-      <div className="">
-        <Board squares={current} onClick={handleClick} />
-      </div>
+      {!winner && <Hud xIsNext={xIsNext} />}
+      <Modal show={!!winner || isFilled}>
+        <h1 className="text-5xl">
+          {isFilled ? "Draw😒" : winner && `Player ${winner} Won!😎`}
+        </h1>
+        <Button onClick={handleReset}>Play Again</Button>
+      </Modal>
+      <Board squares={squares} onClick={handleClick} />
     </div>
   );
 };

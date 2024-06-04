@@ -1,19 +1,19 @@
-import React from "react";
 import Square from "./Square";
 import BoardRow from "./BoardRow";
 
 interface BoardProps {
   squares: (string | null)[];
+  // eslint-disable-next-line
   onClick: (i: number) => void;
 }
 
-const Board: React.FC<BoardProps> = ({ squares, onClick }) => {
+const Board = ({ squares, onClick }: BoardProps) => {
   const renderSquare = (i: number) => {
     return <Square value={squares[i]} onClick={() => onClick(i)} />;
   };
 
   return (
-    <div className="mt-3">
+    <div>
       <BoardRow>
         {renderSquare(0)}
         {renderSquare(1)}

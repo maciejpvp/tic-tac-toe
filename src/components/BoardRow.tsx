@@ -1,10 +1,8 @@
-import React from "react";
-
 type BoardRowProps = {
-    children: React.ReactNode;
-}
+  children: React.ReactNode;
+};
 
-const BoardRow: React.FC<BoardRowProps> = ({ children }) => {
+const BoardRow = ({ children }: BoardRowProps) => {
   return <div className="flex flex-row">{children}</div>;
 };
 
