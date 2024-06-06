@@ -4,34 +4,54 @@ import { calculateWinner, findBestMove } from "../utils/ai";
 import Modal from "./Modal";
 import Hud from "./Hud";
 import Button from "./Button";
+import { useSelector } from "react-redux";
+import { RootState } from "../utils/store";
 
-type GameProps = {
-  gameType: number;
-};
+const Game = () => {
+  const { gameType, isPlayingX } = useSelector(
+    (state: RootState) => state.settings
+  );
 
-const Game = ({ gameType }: GameProps) => {
   const [squares, setSquares] = useState<(string | null)[]>(
     Array(9).fill(null)
   );
-  const [xIsNext, setXIsNext] = useState(true);
-  const [xStarts, setXStarts] = useState(true);
+  const [xIsNext, setXIsNext] = useState(isPlayingX);
+  const [xStarts, setXStarts] = useState(isPlayingX);
+  const [isBotMoving, setIsBotMoving] = useState(false);
 
   const winner = calculateWinner(squares);
 
-  useEffect(() => {
-    if (gameType === 0 && !xIsNext && !winner) {
-      const bestMove = findBestMove(squares, "easy");
-      if (bestMove !== -1) {
-        const newSquares = squares.slice();
-        newSquares[bestMove] = "O";
-        setSquares(newSquares);
-        setXIsNext(true);
-      }
+  const makeComputerMove = (player: "X" | "O") => {
+    const bestMove = findBestMove(squares, "impossible");
+    if (bestMove !== -1) {
+      const newSquares = squares.slice();
+      newSquares[bestMove] = player;
+      setSquares(newSquares);
+      setXIsNext((prev) => !prev);
     }
-  }, [xIsNext, winner, squares, gameType]);
+  };
+
+  useEffect(() => {
+    if (gameType === 0 && !isPlayingX && squares.every((sq) => sq === null)) {
+      makeComputerMove("X");
+    }
+  }, [gameType, isPlayingX, squares]);
+
+  useEffect(() => {
+    if (gameType === 0 && xIsNext !== isPlayingX && !winner && !isBotMoving) {
+      setIsBotMoving(true);
+      makeComputerMove(isPlayingX ? "O" : "X");
+      setIsBotMoving(false);
+    }
+  }, [xIsNext, winner, gameType, isPlayingX, squares, isBotMoving]);
+
+  useEffect(() => {
+    setXIsNext(isPlayingX);
+    setXStarts(isPlayingX);
+  }, [isPlayingX]);
 
   const handleClick = (i: number) => {
-    if (winner || squares[i]) {
+    if (winner || squares[i] || isBotMoving) {
       return;
     }
 
@@ -42,9 +62,14 @@ const Game = ({ gameType }: GameProps) => {
   };
 
   const handleReset = () => {
-    setSquares(Array(9).fill(null));
-    setXIsNext(!xStarts);
+    const initialSquares = Array(9).fill(null);
+    setSquares(initialSquares);
+    setXIsNext(xStarts);
     setXStarts((prev) => !prev);
+
+    if (!xStarts && gameType === 0) {
+      setTimeout(() => makeComputerMove("X"), 500);
+    }
   };
 
   const isFilled = squares.every(
@@ -52,7 +77,7 @@ const Game = ({ gameType }: GameProps) => {
   );
 
   return (
-    <div className="content-center flex-row">
+    <div className="flex flex-col justify-center">
       {!winner && <Hud xIsNext={xIsNext} />}
       <Modal show={!!winner || isFilled}>
         <h1 className="text-5xl">

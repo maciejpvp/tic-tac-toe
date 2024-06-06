@@ -1,5 +1,5 @@
 interface ModalProps {
-  show: boolean;
+  show?: boolean;
   children: React.ReactNode;
 }
 
